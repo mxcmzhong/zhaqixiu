@@ -29,6 +29,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+//右电机--count1-- bo1 bo2/PB12 PB13--E2A E2B/ --bin1 bin2/PA1 PA2--
 uint32_t count1 = 0;//记录编码器的计数值
 uint32_t count2 = 0;//记录编码器的计数值
 float target1,actual1,out1;
@@ -69,9 +70,10 @@ void SystemClock_Config(void);
       target2 = 50;
       count1 = __HAL_TIM_GET_COUNTER(&htim2);
       count2 = __HAL_TIM_GET_COUNTER(&htim3);
-      if(count1 > 32767) count1 = 65536-count1;
-      if(count2 > 32767) count2 = 65536-count2;
-
+      if(count1 > 32767) count1 = count1 - 65536;
+      if(count2 > 32767) count2 = count2 - 65536;
+      if(count1 > 120) count1 = 120;
+      if(count2 > 120) count2 = 120;
       actual1 = count1;
       actual2 = count2;
       pre_error1 = error1;
@@ -80,12 +82,18 @@ void SystemClock_Config(void);
       error2 = target2 - actual2;
       integral1 += error1;
       integral2 += error2;
+      //防止积分过大
+      if(integral1 > 8000) integral1 = 8000;
+      if(integral1 < -8000) integral1 = -8000;
+      if(integral2 > 8000) integral2 = 8000;
+      if(integral2 < -8000) integral2 = -8000;
+
       out1 = kp_1 * error1 + ki_1 * integral1 + kd_1 * (error1 - pre_error1);
       out2 = kp_2 * error2 + ki_2 * integral2 + kd_2 * (error2 - pre_error2);
-      if(out1 > 1000) out1 = 1000;
-      if(out1 < -1000) out1 = -1000;
-      if(out2 > 1000) out2 = 1000;
-      if(out2 < -1000) out2 = -1000;
+      if(out1 > 10000) out1 = 10000;
+      if(out1 < -10000) out1 = -10000;
+      if(out2 > 10000) out2 = 10000;
+      if(out2 < -10000) out2 = -10000;
       
 
       if(out1 >= 0)
@@ -112,8 +120,7 @@ void SystemClock_Config(void);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
       }
-      // Do something with count1 and count2
-      //__HAL_TIM_SET_COUNTER(&htim6, 0);
+      
     
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       __HAL_TIM_SET_COUNTER(&htim3, 0);
