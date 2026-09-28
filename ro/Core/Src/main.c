@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f4xx_hal_gpio.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -34,6 +33,7 @@ uint32_t count1 = 0;//记录编码器的计数值
 uint32_t count2 = 0;//记录编码器的计数值
 float target1,actual1,out1;
 float target2,actual2,out2;
+//target在0-120之间
 float kp_1 = 0.5,ki_1 = 0.1,kd_1 = 0.1;
 float kp_2 = 0.5,ki_2 = 0.1,kd_2 = 0.1;
 float error1,pre_error1,integral1,derivative1;
