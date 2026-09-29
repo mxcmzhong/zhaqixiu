@@ -35,8 +35,8 @@ uint32_t count2 = 0;//记录编码器的计数值
 float target1,actual1,out1;
 float target2,actual2,out2;
 //target在0-120之间
-float kp_1 = 0.5,ki_1 = 0.1,kd_1 = 0.1;
-float kp_2 = 0.5,ki_2 = 0.1,kd_2 = 0.1;
+float kp_1 = 26,ki_1 = 0.8,kd_1 = 0.15;
+float kp_2 = 26,ki_2 = 0.8,kd_2 = 0.15;
 float error1,pre_error1,integral1,derivative1;
 float error2,pre_error2,integral2,derivative2;
 
@@ -68,6 +68,7 @@ void SystemClock_Config(void);
     {
       target1 = 50;
       target2 = 50;
+      HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 8);
       count1 = __HAL_TIM_GET_COUNTER(&htim2);
       count2 = __HAL_TIM_GET_COUNTER(&htim3);
 
@@ -82,10 +83,10 @@ void SystemClock_Config(void);
       integral1 += error1;
       integral2 += error2;
       //防止积分过大
-      if(integral1 > 8000) integral1 = 8000;
-      if(integral1 < -8000) integral1 = -8000;
-      if(integral2 > 8000) integral2 = 8000;
-      if(integral2 < -8000) integral2 = -8000;
+      if(integral1 > 2000) integral1 = 2000;
+      if(integral1 < -2000) integral1 = -2000;
+      if(integral2 > 2000) integral2 = 2000;
+      if(integral2 < -2000) integral2 = -2000;
 
       out1 = kp_1 * error1 + ki_1 * integral1 + kd_1 * (error1 - pre_error1);
       out2 = kp_2 * error2 + ki_2 * integral2 + kd_2 * (error2 - pre_error2);
@@ -179,10 +180,10 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
   while (1)
   {
-   //HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 3);
+    
+   //HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 8);
    //HAL_UART_Transmit(&huart1, (uint8_t *)&count2, sizeof(count2), 3);
     /* USER CODE END WHILE */
 
