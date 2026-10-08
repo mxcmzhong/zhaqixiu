@@ -18,10 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f4xx_hal_gpio.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include "servo.h"
+#include "move.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -30,12 +31,15 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+//右电机--count1-- bo1 bo2/PB12 PB13--E2A E2B/ --bin1 bin2/PA1 PA0--
 uint32_t count1 = 0;//记录编码器的计数值
 uint32_t count2 = 0;//记录编码器的计数值
-float target1,actual1,out1;
-float target2,actual2,out2;
-float kp_1 = 0.5,ki_1 = 0.1,kd_1 = 0.1;
-float kp_2 = 0.5,ki_2 = 0.1,kd_2 = 0.1;
+float actual1,out1;
+float actual2,out2;
+float target1 = 50,target2 = 50;
+//target在0-120之间
+float kp_1 = 26,ki_1 = 0.8,kd_1 = 0.15;
+float kp_2 = 26,ki_2 = 0.8,kd_2 = 0.15;
 float error1,pre_error1,integral1,derivative1;
 float error2,pre_error2,integral2,derivative2;
 
@@ -65,13 +69,15 @@ void SystemClock_Config(void);
 
     if (htim->Instance == TIM6)
     {
-      target1 = 50;
-      target2 = 50;
+
+      
       count1 = __HAL_TIM_GET_COUNTER(&htim2);
       count2 = __HAL_TIM_GET_COUNTER(&htim3);
-      if(count1 > 32767) count1 = 65536-count1;
-      if(count2 > 32767) count2 = 65536-count2;
+      //HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 3);
+      //HAL_UART_Transmit(&huart1, (uint8_t *)&count2, sizeof(count2), 3);
 
+      if(count1 > 32767) count1 = count1 - 65536;
+      if(count2 > 32767) count2 = count2 - 65536;
       actual1 = count1;
       actual2 = count2;
       pre_error1 = error1;
@@ -80,6 +86,12 @@ void SystemClock_Config(void);
       error2 = target2 - actual2;
       integral1 += error1;
       integral2 += error2;
+      //防止积分过大
+      if(integral1 > 2000) integral1 = 2000;
+      if(integral1 < -2000) integral1 = -2000;
+      if(integral2 > 2000) integral2 = 2000;
+      if(integral2 < -2000) integral2 = -2000;
+
       out1 = kp_1 * error1 + ki_1 * integral1 + kd_1 * (error1 - pre_error1);
       out2 = kp_2 * error2 + ki_2 * integral2 + kd_2 * (error2 - pre_error2);
       if(out1 > 1000) out1 = 1000;
@@ -87,33 +99,10 @@ void SystemClock_Config(void);
       if(out2 > 1000) out2 = 1000;
       if(out2 < -1000) out2 = -1000;
       
+      
 
-      if(out1 >= 0)
-      {
-        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, out1);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-      }
-      else
-      {
-        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, -out1);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-      }
-      if(out2 >= 0)
-      {
-        __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, out2);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
-      }
-      else
-      {
-        __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, -out2);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
-      }
-      // Do something with count1 and count2
-      //__HAL_TIM_SET_COUNTER(&htim6, 0);
+    run(out1, out2,&target1,&target2);
+      
     
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       __HAL_TIM_SET_COUNTER(&htim3, 0);
@@ -133,6 +122,7 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
+
 
   /* USER CODE BEGIN 1 */
 
@@ -162,6 +152,8 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM8_Init();
   MX_USART1_UART_Init();
+  MX_TIM4_Init();
+  servo_init();
   /* USER CODE BEGIN 2 */
  
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
@@ -173,11 +165,16 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
   while (1)
   {
-   //HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 3);
-   //HAL_UART_Transmit(&huart1, (uint8_t *)&count2, sizeof(count2), 3);
+   
+   servo_set_angle(0);
+  HAL_Delay(1000);
+  servo_set_angle(90);
+  HAL_Delay(1000);
+    
+   //HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 8);
+   //HAL_UART_Transmit(&huart1, (uint8_t *)&count2, sizeof(count2), 8);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
