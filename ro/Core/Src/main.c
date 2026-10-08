@@ -21,6 +21,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include "servo.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -68,9 +69,11 @@ void SystemClock_Config(void);
     {
       target1 = 50;
       target2 = 50;
-      HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 8);
-      count1 = __HAL_TIM_GET_COUNTER(&htim2);
-      count2 = __HAL_TIM_GET_COUNTER(&htim3);
+      
+     // count1 = __HAL_TIM_GET_COUNTER(&htim2);
+     // count2 = __HAL_TIM_GET_COUNTER(&htim3);
+      HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 3);
+      HAL_UART_Transmit(&huart1, (uint8_t *)&count2, sizeof(count2), 3);
 
       if(count1 > 32767) count1 = count1 - 65536;
       if(count2 > 32767) count2 = count2 - 65536;
@@ -169,6 +172,8 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM8_Init();
   MX_USART1_UART_Init();
+  MX_TIM4_Init();
+  servo_init();
   /* USER CODE BEGIN 2 */
  
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
@@ -182,9 +187,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 500);
+  HAL_Delay(1000);
+  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 1000);
+  HAL_Delay(1000);
+   
     
    //HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 8);
-   //HAL_UART_Transmit(&huart1, (uint8_t *)&count2, sizeof(count2), 3);
+   //HAL_UART_Transmit(&huart1, (uint8_t *)&count2, sizeof(count2), 8);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
