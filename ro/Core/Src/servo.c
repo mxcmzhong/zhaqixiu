@@ -11,7 +11,13 @@ void servo_init(void)
 void servo_set_angle(int angle)
 {
 	int true_angle = 0;
-	true_angle = (angle * 10000) / 180; // Convert angle to pulse width in microseconds
-	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, true_angle);
+	int i=0;
+	true_angle = 500+angle*2000/180; // Convert angle to pulse width in microseconds
+	while (i < 1000) // Wait for 1 second
+	{
+		__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, true_angle);
+	
+		i++;
+	}
  
 }
