@@ -7,8 +7,8 @@
 #include "move.h"
 void run(float speed1, float speed2,float* target1,float* target2)
 {
-	*target1 = 120;
-	*target2 = 120;
+	/* 原来这里把 target1/target2 硬编码成 120，会把视觉算出来的左右差速盖掉。
+	   现在改成由调用方决定；main.c 里初值仍是 120，所以不开视觉时行为不变。 */
   if (speed1 >= 0)
   {
 	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, speed1);

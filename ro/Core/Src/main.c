@@ -21,12 +21,12 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "servo.h"
-#include "move.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "move.h"
+#include "servo.h"
+#include "vision.h"   /* OpenMV 视觉接收端 */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -36,7 +36,7 @@ uint32_t count1 = 0;//记录编码器的计数值
 uint32_t count2 = 0;//记录编码器的计数值
 float actual1,out1;
 float actual2,out2;
-float target1 = 50,target2 = 50;
+float target1 = 120,target2 = 120;//左右轮目标速度（编码器计数/10ms）；视觉在线时会由 vision_update_targets() 改写
 //target在0-120之间
 float kp_1 = 26,ki_1 = 0.8,kd_1 = 0.15;
 float kp_2 = 26,ki_2 = 0.8,kd_2 = 0.15;
@@ -71,6 +71,10 @@ void SystemClock_Config(void);
     {
 
       
+      /* 视觉：用最新一帧的左右偏差刷新左右轮目标速度；无目标/失联时回正直行。
+         这一句不改变下面的 PID 与 run()，只是在算误差之前把目标值更新好。 */
+      vision_update_targets(VISION_BASE_SPEED, VISION_KP_TURN, &target1, &target2);
+
       count1 = __HAL_TIM_GET_COUNTER(&htim2);
       count2 = __HAL_TIM_GET_COUNTER(&htim3);
       //HAL_UART_Transmit(&huart1, (uint8_t *)&count1, sizeof(count1), 3);
@@ -123,7 +127,6 @@ void SystemClock_Config(void);
 int main(void)
 {
 
-
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -153,9 +156,12 @@ int main(void)
   MX_TIM8_Init();
   MX_USART1_UART_Init();
   MX_TIM4_Init();
-  servo_init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
  
+  /* 视觉接收（OpenMV 接 USART3：PB10=TX / PB11=RX），只开接收中断，不阻塞主循环 */
+  vision_init();
+
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
   HAL_TIM_Base_Start_IT(&htim6);

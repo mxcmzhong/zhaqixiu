@@ -22,6 +22,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,6 +58,7 @@
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim6;
 /* USER CODE BEGIN EV */
+extern UART_HandleTypeDef huart3;
 
 /* USER CODE END EV */
 
@@ -213,5 +215,13 @@ void TIM6_DAC_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+/**
+  * @brief This function handles USART3 global interrupt.
+  *        视觉接收用：每收到 1 个字节进一次，解帧逻辑在 vision.c
+  */
+void USART3_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&huart3);
+}
 
 /* USER CODE END 1 */

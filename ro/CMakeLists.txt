@@ -47,6 +47,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     Core/src/servo.c
     Core/src/move.c
+    Core/src/vision.c
 )
 
 # Add include paths
